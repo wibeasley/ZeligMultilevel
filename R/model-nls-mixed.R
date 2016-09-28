@@ -1,5 +1,5 @@
 # Copied & adapted from `model-mixed.R`.
-zmixed <- setRefClass("Zelig-nls-mixed",
+znlsmixed <- setRefClass("Zelig-nls-mixed",
                       fields = list(x.beta = "ANY",
                                     z.b = "ANY",
                                     offset = "ANY",
@@ -31,7 +31,7 @@ znlsmixed$methods(
 )
 
 # Copied & adapted from `model-mixed.R`.
-zmixed$methods(
+znlsmixed$methods(
   set = function(...) {
     .self$mm.RE <- NULL # reset group membership
     s <- list(...)
@@ -45,14 +45,14 @@ zmixed$methods(
 )
 
 # Copied & adapted from `model-mixed.R`.
-zmixed$methods(
+znlsmixed$methods(
   param = function(z.out) {
     return(list(simparam = arm::sim(z.out, .self$num), simalpha = z.out))
   }
 )
 
 # Copied & adapted from `model-ls-mixed.R`.
-zlsmixed$methods(
+znlsmixed$methods(
   zelig = function(formula, data, ..., weights = NULL, by = NULL) {
     .self$zelig.call <- match.call(expand.dots = TRUE)
     .self$model.call <- match.call(expand.dots = TRUE)
@@ -63,7 +63,7 @@ zlsmixed$methods(
 )
 
 # Copied & adapted from `model-ls-mixed.R`.
-zlsmixed$methods(
+znlsmixed$methods(
   qi = function(simparam, mm) {
     regression <- simparam$simalpha;
     sims <- simparam$simparam;
