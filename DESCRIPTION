@@ -18,8 +18,8 @@ Collate:
     "model-mixed.R"
     "model-gamma-mixed.R"
     "model-ls-mixed.R"
+    "model-nls-mixed.R"
     "model-poisson-mixed.R"
     "model-logit-mixed.R"
     "model-probit-mixed.R"
     "create-json.R"
-

@@ -5,6 +5,7 @@ exportClasses(
   "Zelig-mixed",
   "Zelig-gammamixed",
   "Zelig-lsmixed",
+  "Zelig-nlsmixed",
   "Zelig-poissonmixed"
 )
 
