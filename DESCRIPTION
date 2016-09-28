@@ -11,7 +11,9 @@ Depends:
     arm,
     Zelig (>= 5.0-10),
     dplyr,
-    lme4
+    lme4,
+    MASS,
+    methods
 Collate:
     "model-mixed.R"
     "model-gamma-mixed.R"
