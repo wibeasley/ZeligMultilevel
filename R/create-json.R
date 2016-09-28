@@ -19,6 +19,9 @@ createJSONzeligmixed <- function() {
   z5lsmixed <- zlsmixed$new()
   z5lsmixed$toJSON()
   
+  z5nlsmixed <- znlsmixed$new()
+  z5nlsmixed$toJSON()
+  
   z5bpoissonmixed <- zpoissonmixed$new()
   z5bpoissonmixed$toJSON()
   
@@ -28,6 +31,7 @@ createJSONzeligmixed <- function() {
   zeligmixedmodels <- list(zelig5mixedmodels = list("gammamixed" = z5gammamixed$ljson,
                                                     "logitmixed" = z5logitmixed$ljson,
                                                     "lsmixed" = z5lsmixed$ljson,
+                                                    "nlsmixed" = z5nlsmixed$ljson,
                                                     "poissonmixed" = z5bpoissonmixed$ljson,
                                                     "probitmixed" = z5probitmixed$ljson))
   
