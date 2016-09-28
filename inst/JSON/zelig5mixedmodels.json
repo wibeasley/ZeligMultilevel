@@ -39,6 +39,19 @@
       "wrapper": ["ls.mixed"],
       "tree": ["Zelig-lsmixed", "Zelig-mixed"]
     },
+    "nlsmixed": {
+      "name": ["nls.mixed"],
+      "description": [],
+      "outcome": {
+        "modelingType": [""]
+      },
+      "explanatory": {
+        "modelingType": ["continuous", "discrete", "nominal", "ordinal", "binary"]
+      },
+      "vignette.url": [""],
+      "wrapper": ["nls.mixed"],
+      "tree": ["Zelig-nlsmixed", "Zelig"]
+    },
     "poissonmixed": {
       "name": ["poisson.mixed"],
       "description": [],
