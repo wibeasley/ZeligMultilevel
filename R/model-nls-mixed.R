@@ -14,8 +14,8 @@ znlsmixed$methods(
   initialize = function() {
     # Copied & adapted from `model-mixed.R`
     callSuper()
-    .self$fn <- quote(nlme::nlme)
-    .self$packageauthors <- "Jose Pinheiro [aut] (S version), Douglas Bates [aut] (up to 2007), Saikat DebRoy [ctb] (up to 2002), Deepayan Sarkar [ctb] (up to 2005), EISPACK authors [ctb] (src/rs.f), Siem Heisterkamp [ctb] (Author fixed sigma), Bert Van Willigen [ctb] (Programmer fixed sigma), R-core [aut, cre]"
+    .self$fn <- quote(lme4::nlmer)
+    .self$packageauthors <- "TBD"
     .self$modelauthors <- "TBD" 
     .self$year <- 2016
     .self$mm.RE <- NULL
@@ -23,7 +23,7 @@ znlsmixed$methods(
     
     # Copied & adapted from `model-ls-mixed.R`.
     .self$name <- "nls.mixed"
-    .self$fn <- quote(nlme::nlme)
+    .self$fn <- quote(lme4::nlmer)
     .self$category <- "continuous"
     .self$simtype <- "linear"
     .self$wrapper <- "nls.mixed"
@@ -47,18 +47,21 @@ znlsmixed$methods(
 # Copied & adapted from `model-mixed.R`.
 znlsmixed$methods(
   param = function(z.out) {
-    return(list(simparam = arm::sim(z.out, .self$num), simalpha = z.out))
+    #changing function from arm::sim to myArmSim from myArmSim.R file
+    return(list(simparam = myArmSim(z.out, .self$num), simalpha = z.out))
   }
 )
 
 # Copied & adapted from `model-ls-mixed.R`.
 znlsmixed$methods(
-  zelig = function(formula, data, ..., weights = NULL, by = NULL) {
+  zelig = function(formula, start, data, ..., weights = NULL, by = NULL) {
     .self$zelig.call <- match.call(expand.dots = TRUE)
     .self$model.call <- match.call(expand.dots = TRUE)
     callSuper(formula = formula, data = data, ..., weights = weights, by = by)
     .self$formula.full <- .self$formula # fixed and random effects
-    .self$formula <- formula(.self$zelig.out$z.out[[1]], fixed.only = TRUE) # fixed effects only
+    .self$formula <- as.formula(paste0(.self$formula.full[[2]][[2]],"~",setdiff(all.vars(.self$formula.full[[2]][[3]]), names(.self$zelig.call$start)),"-1"))
+    #TURNOFF  
+    #.self$formula <- formula(.self$zelig.out$z.out[[1]], fixed.only = TRUE) # fixed effects only
   }
 )
 
@@ -79,7 +82,7 @@ znlsmixed$methods(
     
     numSimulations <- dim(sims@fixef)[1];
     devcomp <- getME(regression, "devcomp");
-    dims <- devcomp$dims;
+    dims <- devcomp$dims;#list(n=regression$dims$N,q=regression$dims$ngrps[1]*regression$dims$qvec[1],reTrms=regression$dims)
     
     numRanef  <- dims[["q"]];
     numLevels <- dims[["reTrms"]];
@@ -88,10 +91,12 @@ znlsmixed$methods(
     
     index <- 0;
     for (i in 1:length(sims@ranef)) {
+      #i <- 1
       levelSims <- sims@ranef[[i]];
       numCoefficientsPerLevel <- dim(levelSims)[2];
       numGroupsPerLevel <- dim(levelSims)[3];
       for (j in 1:numCoefficientsPerLevel) {
+        #j <- 1
         ranefRange <- index + 1:numGroupsPerLevel;
         index <- index + numGroupsPerLevel;
         
@@ -100,17 +105,46 @@ znlsmixed$methods(
     }
     
     X <- getME(regression, "X");
-    X <- matrix(rep(mm, length(X)), nrow(X), ncol(X), byrow = TRUE)
-    
+    #TURNOFF
+    #X <- matrix(rep(mm, length(X)), nrow(X), ncol(X), byrow = TRUE)
+
     Zt <- getME(regression, "Zt");
-    
+
     ## Linear predictor
     x.beta <- as.matrix(tcrossprod(as.matrix(X), sims@fixef))
     z.b <- crossprod(as.matrix(Zt), simulatedRanef)
-    lp <- x.beta + z.b + matrix(getME(regression, "offset"), dims[["n"]], numSimulations);
+
+    mylp0 <- x.beta + z.b
     
+    #startTime <- proc.time()
+    mylpFe1 <- lapply(as.data.frame(x.beta), function(x)  {matrix(x,nrow=dims[["n"]],dimnames = list(NULL,colnames(X))) })
+    
+    
+    mylp1 <- lapply(as.data.frame(mylp0), function(x)  {matrix(x,nrow=dims[["n"]],dimnames = list(NULL,colnames(X))) })
+    
+
+    lpFeList <- eval(regression@resp$nlmod[[2]],merge(do.call("rbind",mylpFe1),as.data.frame(mm)))
+
+    #lpFeList <- lapply(mylpFe1,function(y) { apply(y,1,function(x) {eval(regression@resp$nlmod[[2]],list(c(x,as.data.frame(mm)))[[1]])} ) } )
+    
+    lpList <- eval(regression@resp$nlmod[[2]],merge(do.call("rbind",mylp1),as.data.frame(mm))) 
+    
+    #lpList <- lapply(mylp1,function(y) { apply(y,1,function(x) {eval(regression@resp$nlmod[[2]],list(c(x,as.data.frame(mm)))[[1]])} ) } )
+    
+    
+    # lpFe <- do.call("cbind",lpFeList)
+    # lp <- do.call("cbind",lpList)
+    
+    lpFe <- matrix(lpFeList,nrow=dims[["n"]])
+    lp <- matrix(lpList,nrow=dims[["n"]])
+    #proc.time() - startTime
+    
+    #TURNOFF
+    #lp <- x.beta + z.b + matrix(getME(regression, "offset"), dims[["n"]], numSimulations);
+
     ## FE
-    ev <- as.matrix(colMeans(x.beta, 1))
+    #TURNOFF #ev <- as.matrix(colMeans(x.beta, 1))
+    ev <- as.matrix(colMeans(lpFe, 1))
     ## FE + RE
     lpm <- as.matrix(colMeans(lp, 1))
     pv <- as.matrix(rnorm(n = length(lpm), mean = lpm, sd = sims@sigma), nrow = length(lpm), ncol = 1)
