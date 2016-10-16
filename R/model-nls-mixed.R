@@ -1,13 +1,14 @@
 # Copied & adapted from `model-mixed.R`.
 znlsmixed <- setRefClass("Zelig-nls-mixed",
-                      fields = list(x.beta = "ANY",
-                                    z.b = "ANY",
-                                    offset = "ANY",
-                                    error = "ANY",
-                                    formula.full = "ANY",# Zelig formula
-                                    mm.RE = "ANY", # group membership
-                                    simtype = "ANY"), # linear or probability 
-                      contains = "Zelig")
+                         fields = list(x.beta = "ANY",
+                                       z.b = "ANY",
+                                       offset = "ANY",
+                                       error = "ANY",
+                                       formula.full = "ANY",# Zelig formula
+                                       mm.RE = "ANY", # group membership
+                                       simtype = "ANY",
+                                       parmExclude = "ANY"), # linear or probability 
+                         contains = "Zelig")
 
 # Copied & adapted from both `model-mixed.R` and `model-ls-mixed.R`.
 znlsmixed$methods(
@@ -59,9 +60,26 @@ znlsmixed$methods(
     .self$model.call <- match.call(expand.dots = TRUE)
     callSuper(formula = formula, data = data, ..., weights = weights, by = by)
     .self$formula.full <- .self$formula # fixed and random effects
-    .self$formula <- as.formula(paste0(.self$formula.full[[2]][[2]],"~",setdiff(all.vars(.self$formula.full[[2]][[3]]), names(.self$zelig.call$start)),"-1"))
+    .self$formula <- as.formula(paste0(.self$formula.full[[2]][[2]],"~",paste(setdiff(all.vars(.self$formula.full[[2]][[3]]), names(eval(.self$zelig.call$start))),collapse = "+"),"-1"))
     #TURNOFF  
     #.self$formula <- formula(.self$zelig.out$z.out[[1]], fixed.only = TRUE) # fixed effects only
+  }
+)
+
+znlsmixed$methods(
+  setx = function(..., fn = list(numeric = mean, ordered = Median, other = Mode),parmExclude=NULL) {
+    callSuper(...)
+    #.self$bsetx <- TRUE
+    #browser()
+    #.self$setx.out$x  <- .self$set(..., fn = fn)
+    .self$parmExclude <- parmExclude
+  }
+)
+
+znlsmixed$methods(
+  setx1 = function(..., fn = list(numeric = mean, ordered = Median, other = Mode)) {
+    .self$bsetx1 <- TRUE
+    .self$setx.out$x1 <- .self$set(...)
   }
 )
 
@@ -105,15 +123,16 @@ znlsmixed$methods(
     }
     
     X <- getME(regression, "X");
+    X[,.self$parmExclude] <- 0
     #TURNOFF
     #X <- matrix(rep(mm, length(X)), nrow(X), ncol(X), byrow = TRUE)
-
+    
     Zt <- getME(regression, "Zt");
-
+    
     ## Linear predictor
     x.beta <- as.matrix(tcrossprod(as.matrix(X), sims@fixef))
     z.b <- crossprod(as.matrix(Zt), simulatedRanef)
-
+    
     mylp0 <- x.beta + z.b
     
     #startTime <- proc.time()
@@ -122,9 +141,9 @@ znlsmixed$methods(
     
     mylp1 <- lapply(as.data.frame(mylp0), function(x)  {matrix(x,nrow=dims[["n"]],dimnames = list(NULL,colnames(X))) })
     
-
+    
     lpFeList <- eval(regression@resp$nlmod[[2]],merge(do.call("rbind",mylpFe1),as.data.frame(mm)))
-
+    
     #lpFeList <- lapply(mylpFe1,function(y) { apply(y,1,function(x) {eval(regression@resp$nlmod[[2]],list(c(x,as.data.frame(mm)))[[1]])} ) } )
     
     lpList <- eval(regression@resp$nlmod[[2]],merge(do.call("rbind",mylp1),as.data.frame(mm))) 
@@ -141,7 +160,7 @@ znlsmixed$methods(
     
     #TURNOFF
     #lp <- x.beta + z.b + matrix(getME(regression, "offset"), dims[["n"]], numSimulations);
-
+    
     ## FE
     #TURNOFF #ev <- as.matrix(colMeans(x.beta, 1))
     ev <- as.matrix(colMeans(lpFe, 1))
